@@ -2,6 +2,14 @@
 Changelog
 #########
 
+0.1.2
+=====
+
+* Adds ability to detect failed catalog compilations. Previously, failed catalog
+  compilations were interpreted as unchanged due to the fact that there's no generated
+  report. This check reports endpoint to confirm that if the node actually is unchanged
+  or if there was a catalog compilation error.
+
 0.1.1
 =====
 
