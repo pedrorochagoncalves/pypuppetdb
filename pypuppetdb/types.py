@@ -80,6 +80,8 @@ class Report(object):
     :type agent_version: :obj:`string`
     :param transaction: The UUID of this transaction.
     :type transaction: :obj:`string`
+    :param status: The status of the Puppet execution this report refers to
+    :type status: :obj:`string`
 
     :ivar node: The hostname this report originated from.
     :ivar hash\_: Unique identifier of this report.
@@ -92,10 +94,11 @@ class Report(object):
     :ivar agent_version: :obj:`string` Puppet Agent version.
     :ivar run_time: :obj:`datetime.timedelta` of **end** - **start**.
     :ivar transaction: UUID identifying this transaction.
+    :ivar status: :obj:`string` status of Puppet execution
 
     """
     def __init__(self, node, hash_, start, end, received, version,
-                 format_, agent_version, transaction):
+                 format_, agent_version, transaction, status):
 
         self.node = node
         self.hash_ = hash_
@@ -108,6 +111,7 @@ class Report(object):
         self.run_time = self.end - self.start
         self.transaction = transaction
         self.__string = '{0}'.format(self.hash_)
+        self.status = status
 
     def __repr__(self):
         return str('Report: {0}'.format(self.__string))

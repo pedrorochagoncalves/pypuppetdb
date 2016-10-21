@@ -71,7 +71,7 @@ class API(BaseAPI):
 
             if with_status:
                 status = [s for s in latest_events
-                          if s['subject']['title'] == node['name']]
+                          if s['subject']['title'] == node['certname']]
 
             # node status from events
             if with_status and status:
@@ -83,19 +83,25 @@ class API(BaseAPI):
             else:
                 if with_status:
                     # Create query
-                    query = '["=","certname","%s"]' % node['name']
-                    latest_report = self._query('reports?limit=1', query=query)
-                    if latest_report['status'] == 'failed':
-                        node['status'] = 'failed'
-                        node['events'] = 'Failed Catalog Compilation'
+                    print node['certname']
+                    query = '["=","certname","%s"]' % node['certname']
+                    latest_reports = self._query('reports', query=query, limit=1)
+
+                    if latest_reports:
+                        # Get the latest only
+                        latest_report = latest_reports[0]
+                        if latest_report['status'] == 'failed':
+                            node['status'] = 'failed'
+                        else:
+                            node['status'] = 'unchanged'
                     else:
                         node['status'] = 'unchanged'
-                        node['events'] = None
+                node['events'] = None
 
             # node report age
-            if with_status and node['report_timestamp'] is not None:
+            if with_status and node['report-timestamp'] is not None:
                 try:
-                    last_report = json_to_datetime(node['report_timestamp'])
+                    last_report = json_to_datetime(node['report-timestamp'])
                     last_report = last_report.replace(tzinfo=None)
                     now = datetime.utcnow()
                     unreported_border = now-timedelta(hours=unreported)
@@ -110,15 +116,15 @@ class API(BaseAPI):
                 except AttributeError:
                     node['status'] = 'unreported'
 
-            if not node['report_timestamp'] and with_status:
+            if not node['report-timestamp'] and with_status:
                 node['status'] = 'unreported'
 
             yield Node(self,
-                       node['name'],
+                       node['certname'],
                        deactivated=node['deactivated'],
-                       report_timestamp=node['report_timestamp'],
-                       catalog_timestamp=node['catalog_timestamp'],
-                       facts_timestamp=node['facts_timestamp'],
+                       report_timestamp=node['report-timestamp'],
+                       catalog_timestamp=node['catalog-timestamp'],
+                       facts_timestamp=node['facts-timestamp'],
                        status=node['status'],
                        events=node['events'],
                        unreported_time=node['unreported_time']
@@ -193,7 +199,8 @@ class API(BaseAPI):
         If not it will return all reports.
 
         This yields a Report object for every returned report."""
-        reports = self._query('reports', query=query)
+        order = '[{"field": "receive-time", "order": "desc"}, {"field": "receive-time"}]'
+        reports = self._query('reports', query=query, order_by=order)
         for report in reports:
             yield Report(
                 report['certname'],
@@ -208,25 +215,48 @@ class API(BaseAPI):
                 report['status']
                 )
 
-    def events(self, query):
+    def events(self, query, node_name):
         """A report is made up of events. This allows to query for events
         based on the reprt hash.
         This yields an Event object for every returned event."""
 
         events = self._query('events', query=query)
-        for event in events:
-            yield Event(
-                event['certname'],
-                event['status'],
-                event['timestamp'],
-                event['report'],
-                event['resource-title'],
-                event['property'],
-                event['message'],
-                event['new-value'],
-                event['old-value'],
-                event['resource-type'],
-                )
+        if events:
+            for event in events:
+                yield Event(
+                    event['certname'],
+                    event['status'],
+                    event['timestamp'],
+                    event['report'],
+                    event['resource-title'],
+                    event['property'],
+                    event['message'],
+                    event['new-value'],
+                    event['old-value'],
+                    event['resource-type'],
+                    )
+        else:
+            query = '["=","certname","%s"]' % node_name
+            latest_reports = self._query('reports', query=query, limit=1)
+
+            if latest_reports:
+                # Get the latest only
+                latest_report = latest_reports[0]
+                if latest_report['status'] == 'failed':
+                    yield Event(
+                        latest_report['certname'],
+                        'failure',
+                        latest_report['end-time'],
+                        latest_report['hash'],
+                        'Failed Catalog Compilation',
+                        'Catalog',
+                        'The Catalog failed to compile for this node. Please \
+                        login to the node and run Puppet manually to check the \
+                        the reason why it failed.',
+                        'Failed',
+                        'None',
+                        'Catalog',
+                        )
 
     def event_counts(self, query, summarize_by,
                      count_by=None, count_filter=None):

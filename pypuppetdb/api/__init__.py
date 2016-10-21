@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 API_VERSIONS = {
     2: 'v2',
     3: 'v3',
+    4: 'v4',
 }
 
 ENDPOINTS = {
@@ -30,6 +31,21 @@ ENDPOINTS = {
         'mbean': 'metrics/mbean',
     },
     3: {
+        'facts': 'facts',
+        'fact-names': 'fact-names',
+        'nodes': 'nodes',
+        'resources': 'resources',
+        'catalogs': 'catalogs',
+        'metrics': 'metrics',
+        'mbean': 'metrics/mbean',
+        'reports': 'reports',
+        'events': 'events',
+        'event-counts': 'event-counts',
+        'aggregate-event-counts': 'aggregate-event-counts',
+        'server-time': 'server-time',
+        'version': 'version',
+    },
+    4: {
         'facts': 'facts',
         'fact-names': 'fact-names',
         'nodes': 'nodes',
